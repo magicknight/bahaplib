@@ -37,7 +37,7 @@ class BahaPost:
         self.bsn = bsn
         self.sna = sna
         self.url = ("http://forum.gamer.com.tw/C.php?" +
-                    "bsn=" + str(self.bsn) + "&" + "sna=" + str(self.sna))
+                    "bsn=" + str(self.bsn) + "&" + "snA=" + str(self.sna))
 
     @property
     def floors_snb(self):
