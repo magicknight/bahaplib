@@ -139,9 +139,9 @@ class Floor:
                                     cookies=REQCOOKIES)
             response.encoding = 'utf8'
             soup = BeautifulSoup(response.text)
-            return re.search(r"^,baha_code:true,content:'[^']*'",
-                             str(soup(id="form1")[0].find_all("script"),
-                                 multiline=True)).group(1)
+            return re.search(r"^,bahacode:true,content:'([^']*?)'",
+                             str(soup(id="form1")[0].find_all("script")),
+                                 flags=re.MULTILINE).group(1)
         elif baha_code and prettify:
             raise ValueError('baha_code and prettify can\'t be true at the same time')
         else:
@@ -151,5 +151,5 @@ class Floor:
                                     cookies=REQCOOKIES)
             response.encoding = 'utf8'
             soup = BeautifulSoup(response.text)
-            text = soup(id="cf" + self.snb)[0]
+            text = soup(id=("cf" + self.snb))[0]
             return text.prettify() if prettify else text.text
