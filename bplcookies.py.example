@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+""" Please change with your own cookies """
+
+BAHARUNE = '7184a86de9d0ef25e37b914e69f9b6164bbe954678e72a63c16fc60376c69148785edd189001ff17a322'
+BAHAID = 'pcchou'
