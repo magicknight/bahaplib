@@ -20,8 +20,8 @@ def from_url(inurl):
     if (parsed.scheme == "http" and
             parsed.netloc == "forum.gamer.com.tw" and
             parsed.path == "/C.php" and
-            all(x in params for x in ["bsn", "sna"])):
-        return BahaPost(params["bsn"], params["sna"])
+            all(x in params for x in ["bsn", "snA"])):
+        return BahaPost(params["bsn"], params["snA"])
     elif (parsed.scheme == "http" and
           parsed.netloc == "forum.gamer.com.tw" and
           parsed.path == "/Co.php" and
@@ -46,7 +46,7 @@ class BahaPost:
 
         soup = BeautifulSoup(
             requests.get("http://forum.gamer.com.tw/C.php",
-                         params={"bsn": self.bsn, "sna": self.sna},
+                         params={"bsn": self.bsn, "snA": self.sna},
                          headers=REQHEADERS,
                          cookies=REQCOOKIES).text
         )
@@ -100,7 +100,7 @@ class Floor:
             parsed = urlparse.urlparse(p_item.a.attrs["href"])
             params_ = dict(urlparse.parse_qsl(parsed.query))
             if parsed.path == 'switch.php' and "bsn" in params_:
-                self.sna = params_["sna"]
+                self.sna = params_["snA"]
                 break
 
     @property
@@ -132,7 +132,7 @@ class Floor:
         if baha_code and not prettify:
             response = requests.get("http://forum.gamer.com.tw/post1.php",
                                     params={"bsn": self.bsn,
-                                            "sna": self.sna,
+                                            "snA": self.sna,
                                             "sn": self.snb,
                                             "type": "2", "re": "1"},
                                     headers=REQHEADERS,
