@@ -188,8 +188,8 @@ class Floor:
         soup = BeautifulSoup(restext)
         ret = []
         for msg in soup("msg")[::-1]:
-            a = []
+            msg_ret = []
             for msg_item in msg(True):
-                a.append({msg_item.name: msg_item.text})
-            ret.append(a)
+                msg_ret.append({msg_item.name: msg_item.text})
+            ret.append(msg_ret)
         return ret
