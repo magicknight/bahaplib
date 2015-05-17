@@ -7,7 +7,8 @@ import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 import re
 
-REQHEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36"}
+REQHEADERS = {"User-Agent": ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                             "(KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36")}
 REQCOOKIES = {}
 
 def from_url(inurl):
@@ -92,6 +93,11 @@ class BahaPost:
         Requies vaild BAHARUNE and BAHAID cookies."""
         return self.floors[0].get_content(baha_code=True, prettify=False)
 
+    @property
+    def comments(self):
+        """ The comment of the main floor """
+        return self.floors[0].comments
+
 class Floor:
     """ An object class used to describe floors of baha posts """
     def __init__(self, bsn, snb):
@@ -149,9 +155,10 @@ class Floor:
                 soup = BeautifulSoup(response.text)
                 return re.search(r"^,bahacode:true,content:'([^']*?)'",
                                  str(soup(id="form1")[0].find_all("script")),
-                                     flags=re.MULTILINE).group(1)
+                                 flags=re.MULTILINE).group(1)
             except IndexError:
-                raise Exception('Not authencated. Set cookies by bpl.set_cookies(BAHAID, BAHARUNE) .')
+                raise Exception('Not authencated.'
+                                ' Set cookies by bpl.set_cookies(BAHAID, BAHARUNE) .')
         elif baha_code and prettify:
             raise ValueError('baha_code and prettify can\'t be true at the same time')
         else:
@@ -165,4 +172,24 @@ class Floor:
                 text = soup(id=("cf" + self.snb))[0]
                 return text.prettify() if prettify else text.text
             except IndexError:
-                raise Exception('Not found. The floor is probably deleted. Try retrieving baha_code.')
+                raise Exception('Not found. '
+                                'The floor is probably deleted or requires authentication. '
+                                'Try retrieving baha_code instead.')
+
+    @property
+    def comments(self):
+        """ The comments of each floors """
+        response = requests.get("http://forum.gamer.com.tw/ajax/moreCommend.php",
+                                params={"bsn": self.bsn, "snB": self.snb},
+                                headers=REQHEADERS,
+                                cookies=REQCOOKIES)
+        response.encoding = 'utf8'
+        restext = re.sub(r'<!\[CDATA\[(.+?)\]\]', r'\1', response.text)
+        soup = BeautifulSoup(restext)
+        ret = []
+        for msg in soup("msg")[::-1]:
+            a = []
+            for msg_item in msg(True):
+                a.append({msg_item.name: msg_item.text})
+            ret.append(a)
+        return ret
