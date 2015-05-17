@@ -6,11 +6,9 @@ import requests
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 import re
-import bplcookies # Please input your own BAHAID and BAHARUNE cookies.
 
 REQHEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36"}
-REQCOOKIES = {"BAHAID": bplcookies.BAHAID, "BAHARUNE": bplcookies.BAHARUNE}
-
+REQCOOKIES = {}
 
 def from_url(inurl):
     """ Initiates a bpl object (BahaPost or Floor) with an URL """
@@ -29,6 +27,15 @@ def from_url(inurl):
         return Floor(params["bsn"], params["sn"])
     else:
         raise ValueError("Input is not a vaild bahaurl.")
+
+def set_cookies(bahaid, baharune):
+    """ Set baha cookies into global const. """
+    global REQCOOKIES
+    if len(baharune) == 84:
+        REQCOOKIES = {"BAHAID": bahaid, "BAHARUNE": baharune}
+    else:
+        raise ValueError('Input is not a vaild baharune.')
+    return None
 
 class BahaPost:
     """ An object class used to describe a baha post. """
@@ -51,7 +58,7 @@ class BahaPost:
                          cookies=REQCOOKIES).text
         )
 
-        for gpword in soup.body("a", {"class": "GPword"}):
+        for gpword in soup("a", {"class": "GPword"}):
             ret.append(
                 re.search(r'upgp_(\d+)', gpword.attrs["id"]).group(1))
 
@@ -89,8 +96,8 @@ class Floor:
     """ An object class used to describe floors of baha posts """
     def __init__(self, bsn, snb):
         """ Initiates a floor object """
-        self.bsn = bsn
-        self.snb = snb
+        self.bsn = str(bsn)
+        self.snb = str(snb)
         soup = BeautifulSoup(requests.get("http://forum.gamer.com.tw/Co.php",
                                           params={"bsn": bsn, "sn": snb},
                                           headers=REQHEADERS,
@@ -130,26 +137,32 @@ class Floor:
         """
 
         if baha_code and not prettify:
-            response = requests.get("http://forum.gamer.com.tw/post1.php",
-                                    params={"bsn": self.bsn,
-                                            "snA": self.sna,
-                                            "sn": self.snb,
-                                            "type": "2", "re": "1"},
-                                    headers=REQHEADERS,
-                                    cookies=REQCOOKIES)
-            response.encoding = 'utf8'
-            soup = BeautifulSoup(response.text)
-            return re.search(r"^,bahacode:true,content:'([^']*?)'",
-                             str(soup(id="form1")[0].find_all("script")),
-                                 flags=re.MULTILINE).group(1)
+            try:
+                response = requests.get("http://forum.gamer.com.tw/post1.php",
+                                        params={"bsn": self.bsn,
+                                                "snA": self.sna,
+                                                "sn": self.snb,
+                                                "type": "2", "re": "1"},
+                                        headers=REQHEADERS,
+                                        cookies=REQCOOKIES)
+                response.encoding = 'utf8'
+                soup = BeautifulSoup(response.text)
+                return re.search(r"^,bahacode:true,content:'([^']*?)'",
+                                 str(soup(id="form1")[0].find_all("script")),
+                                     flags=re.MULTILINE).group(1)
+            except IndexError:
+                raise Exception('Not authencated. Set cookies by bpl.set_cookies(BAHAID, BAHARUNE) .')
         elif baha_code and prettify:
             raise ValueError('baha_code and prettify can\'t be true at the same time')
         else:
-            response = requests.get("http://forum.gamer.com.tw/Co.php",
-                                    params={"bsn": self.bsn, "sn": self.snb},
-                                    headers=REQHEADERS,
-                                    cookies=REQCOOKIES)
-            response.encoding = 'utf8'
-            soup = BeautifulSoup(response.text)
-            text = soup(id=("cf" + self.snb))[0]
-            return text.prettify() if prettify else text.text
+            try:
+                response = requests.get("http://forum.gamer.com.tw/Co.php",
+                                        params={"bsn": self.bsn, "sn": self.snb},
+                                        headers=REQHEADERS,
+                                        cookies=REQCOOKIES)
+                response.encoding = 'utf8'
+                soup = BeautifulSoup(response.text)
+                text = soup(id=("cf" + self.snb))[0]
+                return text.prettify() if prettify else text.text
+            except IndexError:
+                raise Exception('Not found. The floor is probably deleted. Try retrieving baha_code.')
